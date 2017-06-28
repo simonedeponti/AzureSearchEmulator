@@ -1,0 +1,20 @@
+version: '2'
+
+volumes:
+  solrdata:
+
+services:
+  solr:
+    image: solr:6-alpine
+    ports:
+     - "8983:8983"
+    volumes:
+      - solrdata:/opt/solr/server/solr/mycores
+  azsearch:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - "./AzureSearchEmulator:/srv/webapp/AzureSearchEmulator"
+    links:
+      - solr

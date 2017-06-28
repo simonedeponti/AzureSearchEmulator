@@ -1,0 +1,6 @@
+.vscode/tags
+__pycache__
+*.py[co]
+*.egg-info
+dist
+build

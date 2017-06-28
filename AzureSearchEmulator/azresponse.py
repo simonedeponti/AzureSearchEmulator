@@ -1,0 +1,2 @@
+def format(result):
+    return {}

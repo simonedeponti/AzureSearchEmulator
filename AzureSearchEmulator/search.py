@@ -13,7 +13,7 @@ async def search(request):
         else:
             parameters = azquery.parse(request.query, False)
         result = await solr.search(index, parameters)
-        return web.json_response(azresponse.format(result))
+        return web.json_response(azresponse.format(result, parameters))
     except NotImplementedError as e:
         return web.json_response(
             {

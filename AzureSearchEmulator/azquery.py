@@ -211,7 +211,50 @@ def odata_to_lucene(query):
     try:
         return parser.transform(query)
     except ParseException as e:
-        raise ODataParseFailure()
+        raise ODataParseFailure(e)
+
+
+def az_facets_to_solr(facets):
+    if not facets:
+        return None
+    params = {}
+    for expr in facets:
+        expr_components = expr.split(',')
+        field = expr_components[0]
+        options = expr_components[1:]
+        params['top_{}'.format(field)] = {
+            'terms': {
+                'field': field
+            }
+        }
+        field_opts = params['top_{}'.format(field)]['terms']
+        if len(options) > 0:
+            options_dict = {}
+            for opt in options:
+                c = opt.split(':')
+                options_dict[c[0]] = c[1]
+            if 'count' in options_dict:
+                field_opts['limit'] = int(options_dict['count'])
+            if 'sort' in options_dict:
+                if options_dict['sort'] == 'count':
+                    field_opts['sort'] = 'count'
+                elif options_dict['sort'] == '-count':
+                    raise NotImplementedError(
+                        '-count facet sorting not implemented'
+                    )
+                if options_dict['sort'] == 'value':
+                    field_opts['sort'] = 'index'
+                elif options_dict['sort'] == '-value':
+                    raise NotImplementedError(
+                        '-value facet sorting not implemented'
+                    )
+            if 'values' in options_dict:
+                raise NotImplementedError('values facet not implemented')
+            if 'interval' in options_dict:
+                raise NotImplementedError('interval facet not implemented')
+            if 'timeoffset' in options_dict:
+                raise NotImplementedError('timeoffset facet not implemented')
+    return params
 
 
 def parse(request, is_post=False):
@@ -244,9 +287,7 @@ def parse(request, is_post=False):
     if is_post:
         facets = request.get('facets')
     else:
-        facets = request.get('facet')
-        if facets is not None:
-            facets = facets.split(',')
+        facets = request.getall('facet')
     filter_query = request.get('filter' if is_post else '$filter')
     return {
         'mode': mode,
@@ -257,6 +298,6 @@ def parse(request, is_post=False):
         'count': count,
         'order_by': order_by,
         'select': select,
-        'facets': facets,
+        'facets': az_facets_to_solr(facets),
         'filter_query': odata_to_lucene(filter_query)
     }

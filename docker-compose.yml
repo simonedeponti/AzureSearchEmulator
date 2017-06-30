@@ -9,12 +9,15 @@ services:
     ports:
      - "8983:8983"
     volumes:
-      - solrdata:/opt/solr/server/solr/mycores
+      - solrdata:/opt/solr/server/solr/booksample
   azsearch:
     build: .
     ports:
       - "8080:8080"
+    environment:
+      AZEMULATOR_DEBUG: "true"
     volumes:
       - "./AzureSearchEmulator:/srv/webapp/AzureSearchEmulator"
+      - "./example-indexes.json:/srv/azuresearch/indexes.json"
     links:
       - solr

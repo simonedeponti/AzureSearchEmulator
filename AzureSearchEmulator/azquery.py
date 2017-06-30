@@ -271,8 +271,8 @@ def parse(request, is_post=False):
     query = request.get('search', '*')
     if query_type == 'simple':
         query = simple_to_lucene(query)
-    skip = request.get('skip' if is_post else '$skip')
-    limit = request.get('top' if is_post else '$top')
+    skip = int(request.get('skip' if is_post else '$skip', '0'))
+    limit = int(request.get('top' if is_post else '$top', '50'))
     count = request.get('count' if is_post else '$count', False)
     if not count or count.lower() == 'false':
         count = False
@@ -287,7 +287,7 @@ def parse(request, is_post=False):
     if is_post:
         facets = request.get('facets')
     else:
-        facets = request.getall('facet')
+        facets = request.getall('facet', [])
     filter_query = request.get('filter' if is_post else '$filter')
     return {
         'mode': mode,
@@ -299,5 +299,8 @@ def parse(request, is_post=False):
         'order_by': order_by,
         'select': select,
         'facets': az_facets_to_solr(facets),
-        'filter_query': odata_to_lucene(filter_query)
+        'fields': search_fields,
+        'filter_query': (
+            odata_to_lucene(filter_query) if filter_query else None
+        )
     }

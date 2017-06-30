@@ -9,11 +9,20 @@ async def search(request):
     try:
         if request.method == "POST":
             request_data = await request.json()
-            parameters = azquery.parse(request_data, True)
+            is_post = True
+            parameters = azquery.parse(request_data, is_post)
         else:
-            parameters = azquery.parse(request.query, False)
+            is_post = False
+            parameters = azquery.parse(request.query, is_post)
         result = await solr.search(index, parameters)
-        return web.json_response(azresponse.format(result, parameters))
+        return web.json_response(
+            azresponse.format(
+                request,
+                result,
+                parameters,
+                is_post
+            )
+        )
     except NotImplementedError as e:
         return web.json_response(
             {
@@ -35,4 +44,26 @@ async def search(request):
                 'detail': str(e)
             },
             status=400
+        )
+    except ValueError as e:
+        return web.json_response(
+            {
+                'error': 'parse_fail',
+                'message': (
+                    'Error while parsing query'
+                ),
+                'detail': str(e)
+            },
+            status=400
+        )
+    except Exception as e:
+        return web.json_response(
+            {
+                'error': 'failure',
+                'message': (
+                    'Error while searching'
+                ),
+                'detail': str(e)
+            },
+            status=500
         )

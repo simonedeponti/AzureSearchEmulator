@@ -7,7 +7,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         "aiohttp",
-        "pyparsing"
+        "pyparsing",
+        "defusedxml"
     ],
     entry_points={
         'console_scripts': [

@@ -1,5 +1,14 @@
+import os
+import sys
+from logging import basicConfig, getLogger
 from aiohttp import web
 from .search import search
+from .tools import recreate_indexes
+
+
+LOGFMT = '[%(asctime)s %(levelname)s] %(name)s %(message)s'
+INDEXES_FILE = '/srv/azuresearch/indexes.json'
+logger = getLogger(__name__)
 
 
 async def hello(request):
@@ -11,8 +20,21 @@ async def hello(request):
 
 
 def main():
-    app = web.Application()
+    debug_mode = (
+        os.environ.get('AZEMULATOR_DEBUG', '').lower() in ('true', 'on', '1')
+    )
+    if debug_mode:
+        basicConfig(level='DEBUG', format=LOGFMT, stream=sys.stdout)
+    else:
+        basicConfig(level='INFO', format=LOGFMT, stream=sys.stdout)
+    if os.path.isfile(INDEXES_FILE):
+        logger.info('Checking indexes to re-create')
+        with open(INDEXES_FILE, 'r', encoding='utf-8') as stream:
+            recreate_indexes(stream)
+    app = web.Application(debug=debug_mode)
     app.router.add_get('/', hello)
     app.router.add_get('/indexes/{index}/docs', search)
     app.router.add_post('/indexes/{index}/docs', search)
+    app.router.add_get('/indexes/{index}/docs/search', search)
+    app.router.add_post('/indexes/{index}/docs/search', search)
     web.run_app(app)

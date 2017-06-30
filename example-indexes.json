@@ -1,0 +1,73 @@
+{
+    "booksample": {
+        "schema": {
+            "id": {
+                "type": "Edm.String",
+                "tags": [
+                    "retrievable"
+                ],
+                "is_primary": true
+            },
+            "name": {
+                "type": "Edm.String",
+                "tags": [
+                    "searchable",
+                    "retrievable",
+                    "sortable"
+                ]
+            },
+            "description": {
+                "type": "Edm.String",
+                "tags": [
+                    "searchable",
+                    "retrievable"
+                ]
+            },
+            "paperback": {
+                "type": "Edm.Boolean",
+                "tags": [
+                    "retrievable",
+                    "filterable",
+                    "sortable",
+                    "facetable"
+                ]
+            },
+            "pages": {
+                "type": "Edm.Int32",
+                "tags": [
+                    "retrievable",
+                    "filterable",
+                    "sortable",
+                    "facetable"
+                ]
+            },
+            "price": {
+                "type": "Edm.Double",
+                "tags": [
+                    "retrievable",
+                    "filterable",
+                    "sortable",
+                    "facetable"
+                ]
+            },
+            "tags": {
+                "type": "Collection(Edm.String)",
+                "tags": [
+                    "retrievable",
+                    "filterable",
+                    "sortable",
+                    "facetable"
+                ]
+            },
+            "published": {
+                "type": "Edm.DateTimeOffset",
+                "tags": [
+                    "retrievable",
+                    "filterable",
+                    "sortable",
+                    "facetable"
+                ]
+            }
+        }
+    }
+}

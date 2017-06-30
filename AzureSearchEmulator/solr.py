@@ -72,3 +72,35 @@ async def search(index, params):
                     "Cannot decode JSON from SOLR",
                     response_payload
                 )
+
+
+async def index(index, inserts, deletes, index_primary):
+    insert_url = urljoin(SOLR_URL, '{}/update/json/docs'.format(index))
+    delete_url = urljoin(SOLR_URL, '{}/update/json'.format(index))
+    succeeded = []
+    failed = []
+    async with ClientSession() as session:
+        if len(inserts) > 0:
+            logger.debug('Contacting endpoint {}'.format(insert_url))
+            async with session.post(insert_url, json=inserts) as resp:
+                response = await resp.text()
+                logger.debug(response)
+                if resp.status != 200:
+                    logger.critical("Indexing in {} failed".format(index))
+                    failed.extend(i[index_primary] for i in inserts)
+                else:
+                    succeeded.extend(i[index_primary] for i in inserts)
+        if len(deletes) > 0:
+            logger.debug('Contacting endpoint {}'.format(delete_url))
+            delete_payload = {
+                'delete': [i[index_primary] for i in deletes]
+            }
+            async with session.post(insert_url, json=delete_payload) as resp:
+                response = await resp.text()
+                logger.debug(response)
+                if resp.status != 200:
+                    logger.critical("Deletes in {} failed".format(index))
+                    failed.extend(delete_payload['delete'])
+                else:
+                    succeeded.extend(delete_payload['delete'])
+    return (succeeded, failed)

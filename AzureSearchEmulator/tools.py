@@ -132,3 +132,10 @@ def recreate_indexes(stream):
     indexes = json.load(stream)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main(loop, indexes))
+    return {
+        index_id: [
+            k for k, v in index_def['schema'].items()
+            if v.get('is_primary', False)
+        ][0]
+        for index_id, index_def in indexes.items()
+    }

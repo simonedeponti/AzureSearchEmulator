@@ -17,15 +17,49 @@ For other details, see the surce code or the included `docker-compose.yml`.
 
 This has been tested with SOLR 6.
 
+## Index definition
+
+Indexes cannot be defined via API.
+
+Instead, the wrapper looks for a JSON file in `/srv/azuresearch/indexes.json`
+(which can be mounted, see example `docker-compose.yml`).
+
+The definition file has the following structure:
+
+```javascript
+  {
+    "<index_name>": {
+      "schema": {
+        "<field_name>": {
+          "type": "<type_of_field>", // e.g. Edm.String
+          "tags": [                  // Field options
+            "searchable",
+            "retrievable",
+            "filterable",
+            "sortable",
+            "facetable"
+          ],
+          "is_primary": <true|false>
+        }
+      }
+    }
+  }
+```
+
+Indexes are created if missing upon tool start:
+if they are already existing however they are not updated
+(they must be deleted via SOLR UI first, so a restart will recreate them)
+
 ## Unsupported features
 
 These are the main features currently unsupported:
 
- - index creation
- - indexing content
+ - index creation and management
  - suggestions
  - document lookup
  - document count with `$count` endpoint
+
+The indexing feature treats `merge` and `mergeOrUpload` as `upload`.
 
 The search feature does not support the following sub-features (and will return 400 Bad Request):
 
@@ -39,6 +73,3 @@ The search feature does not support the following sub-features (and will return 
  - `timeoffset` option in facets
 
 Error messages do not comply with the standard Azure Search, they are custom.
-
-## Tools
-

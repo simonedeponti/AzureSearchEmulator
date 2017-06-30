@@ -9,7 +9,7 @@ services:
     ports:
      - "8983:8983"
     volumes:
-      - solrdata:/opt/solr/server/solr/booksample
+      - solrdata:/opt/solr/server/solr/mycores
   azsearch:
     build: .
     ports:

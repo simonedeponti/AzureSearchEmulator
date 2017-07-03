@@ -12,4 +12,5 @@ RUN chown -R webapp:webapp /srv/webapp
 RUN pip3 install -e .
 
 USER webapp
+EXPOSE 8080
 CMD "AzureSearchEmulator"

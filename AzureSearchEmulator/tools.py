@@ -1,8 +1,10 @@
 import asyncio
 import json
 import aiohttp
+import time
 from logging import getLogger
 from defusedxml.ElementTree import fromstring
+from aiohttp.client_exceptions import ClientConnectorError
 from .solr import SOLR_URL
 
 
@@ -19,28 +21,36 @@ URL_TEMPLATES = {
 
 TYPES = {
     'Edm.String': lambda tags: {
-        'type': 'text_general' if 'searchable' in tags else 'string'
+        'type': 'text_general' if 'searchable' in tags else 'string',
+        'multiValued': False
     },
     'Collection(Edm.String)': lambda tags: {
         'type': 'text_general' if 'searchable' in tags else 'string',
         'multiValued': True
     },
     'Edm.Int32': lambda tags: {
-        'type': 'int'
+        'type': 'int',
+        'multiValued': False
     },
     'Edm.Int64': lambda tags: {
-        'type': 'long'
+        'type': 'long',
+        'multiValued': False
     },
     'Edm.Boolean': lambda tags: {
-        'type': 'boolean'
+        'type': 'boolean',
+        'multiValued': False
     },
     'Edm.Double': lambda tags: {
-        'type': 'double'
+        'type': 'double',
+        'multiValued': False
     },
     'Edm.DateTimeOffset': lambda tags: {
-        'type': 'date'
+        'type': 'date',
+        'multiValued': False
     }
 }
+
+MAX_RETRIES = 10
 
 logger = getLogger(__name__)
 
@@ -48,8 +58,11 @@ logger = getLogger(__name__)
 async def get_cores_status(client):
     url = URL_TEMPLATES['status'].format(solr_url=SOLR_URL.rstrip('/'))
     cores = set()
+    logger.debug("Calling endpoint {}".format(url))
     async with client.get(url) as resp:
-        status = fromstring(await resp.text()).find("./lst[@name='status']")
+        text_resp = await resp.text()
+        logger.debug("Got {}".format(text_resp))
+        status = fromstring(text_resp).find("./lst[@name='status']")
         if not status:
             status = []
         for core in status:
@@ -109,7 +122,20 @@ async def create_schema(client, index, operations):
 
 async def main(loop, indexes):
     async with aiohttp.ClientSession(loop=loop) as client:
+        tries = 0
+        while tries < MAX_RETRIES:
+            try:
+                async with client.get(SOLR_URL) as resp:
+                    await resp.text()
+            except ClientConnectorError:
+                logger.info("Cannot contact {}, waiting".format(SOLR_URL))
+                time.sleep(1)
+                tries += 1
+            else:
+                time.sleep(10)
+                tries = MAX_RETRIES
         existing_cores = await get_cores_status(client)
+        logger.debug("Existing cores: {}".format(existing_cores))
         for index, definition in indexes.items():
             if index not in existing_cores:
                 logger.info("Creating core {}".format(index))

@@ -75,14 +75,13 @@ async def search(index, params):
 
 
 async def index(index, inserts, deletes, index_primary):
-    insert_url = urljoin(SOLR_URL, '{}/update'.format(index))
-    delete_url = urljoin(SOLR_URL, '{}/update'.format(index))
+    url = urljoin(SOLR_URL, '{}/update'.format(index))
     succeeded = []
     failed = []
     async with ClientSession() as session:
         if len(inserts) > 0:
-            logger.debug('Contacting endpoint {}'.format(insert_url))
-            async with session.post(insert_url, json=inserts) as resp:
+            logger.debug('Contacting endpoint {}'.format(url))
+            async with session.post(url, json=inserts) as resp:
                 response = await resp.text()
                 logger.debug(response)
                 if resp.status != 200:
@@ -91,11 +90,11 @@ async def index(index, inserts, deletes, index_primary):
                 else:
                     succeeded.extend(i[index_primary] for i in inserts)
         if len(deletes) > 0:
-            logger.debug('Contacting endpoint {}'.format(delete_url))
+            logger.debug('Contacting endpoint {}'.format(url))
             delete_payload = {
                 'delete': [i[index_primary] for i in deletes]
             }
-            async with session.post(insert_url, json=delete_payload) as resp:
+            async with session.post(url, json=delete_payload) as resp:
                 response = await resp.text()
                 logger.debug(response)
                 if resp.status != 200:
@@ -103,4 +102,10 @@ async def index(index, inserts, deletes, index_primary):
                     failed.extend(delete_payload['delete'])
                 else:
                     succeeded.extend(delete_payload['delete'])
+        logger.debug('Contacting endpoint {}'.format(url))
+        async with session.post(url, json={'commit': {}}) as resp:
+            response = await resp.text()
+            logger.debug(response)
+            if resp.status != 200:
+                logger.critical("Commit in {} failed".format(index))
     return (succeeded, failed)

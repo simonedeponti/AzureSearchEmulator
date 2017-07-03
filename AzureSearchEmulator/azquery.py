@@ -57,7 +57,7 @@ class ODataQueryParser(object):
         operatorOr = Forward()
 
         operatorWord = Group(
-            Word(alphanums + '.')
+            Word(alphanums + '._')
         ).setResultsName('word')
 
         operatorQuotesContent = Forward()

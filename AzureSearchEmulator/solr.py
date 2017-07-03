@@ -75,8 +75,8 @@ async def search(index, params):
 
 
 async def index(index, inserts, deletes, index_primary):
-    insert_url = urljoin(SOLR_URL, '{}/update/json/docs'.format(index))
-    delete_url = urljoin(SOLR_URL, '{}/update/json'.format(index))
+    insert_url = urljoin(SOLR_URL, '{}/update'.format(index))
+    delete_url = urljoin(SOLR_URL, '{}/update'.format(index))
     succeeded = []
     failed = []
     async with ClientSession() as session:

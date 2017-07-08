@@ -5,11 +5,21 @@ from urllib.parse import urlencode
 logger = getLogger(__name__)
 
 
-def format(request, result, parameters, is_post):
+def format(request, result, raw_parameters, is_post):
     final = {}
     logger.debug("Got response from SOLR: {}".format(result))
+    if is_post:
+        count = raw_parameters.get('count', False)
+        if isinstance(count, str):
+            count = count.lower() == 'true'
+        skip = raw_parameters.get('skip', 0)
+        limit = raw_parameters.get('top', 50)
+    else:
+        count = raw_parameters.get('$count', 'false').lower() == 'true'
+        skip = int(raw_parameters.get('$skip', '0'))
+        limit = int(raw_parameters.get('$top', '50'))
     result_count = result['response']['numFound']
-    if parameters.get('count', False):
+    if count:
         final['@odata.count'] = result_count
     final['value'] = []
     for doc in result['response']['docs']:
@@ -31,25 +41,16 @@ def format(request, result, parameters, is_post):
                 {'value': i['val'], 'count': i['count']}
                 for i in v['buckets']
             ]
-    if (parameters['skip'] + parameters['limit']) < result_count:
+    if (skip + limit) < result_count:
         if is_post:
-            final['@odata.nextLink'] = '{}?{}'.format(
-                request.url,
-                urlencode(
-                    (k, v) for k, v in request.query.items()
-                    if k == 'api-version'
-                )
-            )
-            next_params = parameters.copy()
-            next_params['skip'] = parameters['skip'] + parameters['limit']
+            final['@odata.nextLink'] = str(request.url)
+            next_params = raw_parameters.copy()
+            next_params['skip'] = skip + limit
             final['@odata.nextPageParameters'] = next_params
         else:
             next_params = request.query.copy()
-            next_params['$skip'] = str(
-                parameters['skip'] + parameters['limit']
-            )
-            final['@odata.nextLink'] = '{}?{}'.format(
-                request.url,
-                urlencode(next_params.items())
-            )
+            next_params['$skip'] = str(skip + limit)
+            final['@odata.nextLink'] = str(request.url.with_query(
+                list(next_params.items())
+            ))
     return final

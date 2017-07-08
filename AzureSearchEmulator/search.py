@@ -11,16 +11,17 @@ async def search(request):
         if request.method == "POST":
             request_data = await request.json()
             is_post = True
-            parameters = azquery.parse(request_data, is_post)
+            raw_parameters = request_data
         else:
             is_post = False
-            parameters = azquery.parse(request.query, is_post)
+            raw_parameters = request.query
+        parameters = azquery.parse(raw_parameters, is_post)
         result = await solr.search(index, parameters)
         return web.json_response(
             azresponse.format(
                 request,
                 result,
-                parameters,
+                raw_parameters,
                 is_post
             )
         )

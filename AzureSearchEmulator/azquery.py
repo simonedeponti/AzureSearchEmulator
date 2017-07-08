@@ -274,10 +274,13 @@ def parse(request, is_post=False):
     skip = int(request.get('skip' if is_post else '$skip', '0'))
     limit = int(request.get('top' if is_post else '$top', '50'))
     count = request.get('count' if is_post else '$count', False)
-    if not count or count.lower() == 'false':
+    if not count:
         count = False
     else:
-        count = True
+        if isinstance(count, str) and count.lower() != 'false':
+            count = False
+        else:
+            count = True
     order_by = request.get('orderby' if is_post else '$orderby')
     if order_by is not None:
         order_by = order_by.split(',')

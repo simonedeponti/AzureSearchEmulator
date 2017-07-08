@@ -1,3 +1,4 @@
+import traceback
 from aiohttp import web
 from . import solr
 from . import azquery
@@ -52,7 +53,8 @@ async def search(request):
                 'message': (
                     'Error while parsing query'
                 ),
-                'detail': str(e)
+                'detail': str(e),
+                'traceback': traceback.format_exc()
             },
             status=400
         )
@@ -63,7 +65,8 @@ async def search(request):
                 'message': (
                     'Error while searching'
                 ),
-                'detail': str(e)
+                'detail': str(e),
+                'traceback': traceback.format_exc()
             },
             status=500
         )
